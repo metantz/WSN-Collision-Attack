@@ -1,2 +1,2 @@
-//Tool to display what receiver print..
+//Tool to display what receiver prints..
 java net.tinyos.tools.PrintfClient -comm serial@/dev/ttyUSBX:115200 //Replace X with the correct number..
