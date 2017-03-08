@@ -31,6 +31,8 @@
  *
  * Author: Miklos Maroti
  * Author: Branislav Kusy (bugfixes)
+ *
+ * Modified by: Metantz
  */
 
 #include <RF230DriverLayer.h>
