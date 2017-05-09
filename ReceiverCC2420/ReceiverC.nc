@@ -6,6 +6,7 @@ module ReceiverC
 	uses
 	{
 		interface Boot;
+		interface Leds;
 		interface Receive;
 		interface CC2420Packet as Packet;
 		interface SplitControl as AMControl;
@@ -14,7 +15,7 @@ module ReceiverC
 
 implementation
 {
-	Nodes_Packet_Counter rec[3]; //up to 3 nodes..nodeIDs must be between 0 and 2. We use them to access to array's elements.
+	Nodes_Packet_Counter rec[3]; //up to 3 nodes to observe..nodeIDs must be between 0 and 2. We use them to access to array's elements.
 	int8_t rssi = 0, lqi = 0;
 	int16_t actual_loss = 0;
 	int16_t old_loss = 0;
@@ -46,8 +47,59 @@ implementation
 		if(len == sizeof(TestRadioMsg))
 		{
 			TestRadioMsg * trpkt = (TestRadioMsg*)payload;
-			if(trpkt->nodeid == 1)
+			if(trpkt->nodeid == 1) //Actually we observe only nodes with ID equals to 1
 			{
+				/*
+       				  The RSSI register value RSSI.RSSI_VAL can be referred to the power P at the RF 
+				  pins by using the following equations: P = RSSI_VAL + RSSI_OFFSET [dBm]
+				  where the RSSI_OFFSET is found empirically during system development
+				  from the front end gain. RSSI_OFFSET is approximately –45. E.g. if reading a value
+				  of –20 from the RSSI register, the RF input power is approximately –65 dBm. (p. 48 datasheet cc2420)
+				*/
+
+
+				rssi += ((int8_t) call Packet.getRssi(msg)) - 45;
+				lqi += (int8_t) call Packet.getLqi(msg);
+				rec[trpkt->nodeid].received++;
+				rec[trpkt->nodeid].should_be_received = trpkt->counter;
+			
+				if(rec[trpkt->nodeid].should_be_received == 1)
+				{
+					rec[trpkt->nodeid].received = 1;
+					actual_loss = 0;
+					old_loss = 0;
+					rssi = 0;
+					lqi = 0;
+					
+				}
+				
+				if(!(rec[trpkt->nodeid].received % 100)) //every 100 packets received, print how many packets we have lost.
+				{
+					actual_loss = rec[trpkt->nodeid].should_be_received - rec[trpkt->nodeid].received;
+					(actual_loss - old_loss) > 24 ? (actual_loss - old_loss > 49 ? (actual_loss - old_loss > 74 ? call Leds.set(7) : call Leds.set(3)) : call Leds.set(1)) : call Leds.set(0); 							
+						printf("Node %d: %d / %d\t[persi: %d/100 tot: %d (%d)]\tReceived Signal Strength (RSSI): %d dBm  Link Quality (LQI): %d\n", trpkt->nodeid, rec[trpkt->nodeid].received, rec[trpkt->nodeid].should_be_received, actual_loss - old_loss, actual_loss, trpkt->nodeid, rssi/100, lqi/100);
+						printfflush();
+						old_loss = actual_loss; 
+						rssi = 0;
+						lqi = 0;
+				}
+			}
+		}
+		
+			
+		return msg;
+	}
+}
+
+
+
+
+
+
+
+
+
+
 				/*
        				  The RSSI register value RSSI.RSSI_VAL can be referred to the power P at the RF 
 				  pins by using the following equations: P = RSSI_VAL + RSSI_OFFSET [dBm]
