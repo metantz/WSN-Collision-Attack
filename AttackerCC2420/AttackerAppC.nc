@@ -8,7 +8,7 @@ implementation
 	components new TimerMilliC() as Timer0;
 	components AttackerC as App;
 	components ActiveMessageC;
-	components new AMSenderC(6);	//ActiveMessage of type 6
+	components new AMSenderC(6);
 	
 	App.Boot -> MainC;
 	App.Timer0 -> Timer0;
