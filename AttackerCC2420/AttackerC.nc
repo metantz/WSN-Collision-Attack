@@ -29,7 +29,7 @@ implementation
 	{
 		if(err == SUCCESS)
 		{
-			call Timer0.startPeriodic(3); 
+			call Timer0.startPeriodic(7); 
 		}
 		else
 		{
@@ -48,6 +48,26 @@ implementation
 	
 			if(call AMSend.send(AM_BROADCAST_ADDR, &pkt, sizeof(AttackerMsg)) == SUCCESS) //we send the packet in the air...
 			{
+				busy = TRUE;
+			}
+		}
+	}
+
+	event void AMControl.stopDone(error_t err){}
+
+	event void AMSend.sendDone(message_t* msg, error_t error)
+	{
+   		if (&pkt == msg)
+   		{
+      			busy = FALSE;
+    	}
+  	}
+	
+	async event void RadioBackoff.requestCca(message_t * ONE msg) {call RadioBackoff.setCca(FALSE);} //We intercept the desired event to disable CCA
+	async event void RadioBackoff.requestInitialBackoff(message_t * ONE msg) {}
+	async event void RadioBackoff.requestCongestionBackoff(message_t * ONE msg) {}
+
+}
 				busy = TRUE;
 			}
 		}
